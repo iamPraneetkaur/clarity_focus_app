@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Clarity</string>
+    <string name="title_activity_nav_graph.kt">NavGraph.kt</string>
+    <string name="title_activity_nav_graph">NavGraph</string>
+</resources>
