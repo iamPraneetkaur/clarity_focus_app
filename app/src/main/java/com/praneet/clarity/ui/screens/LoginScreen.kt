@@ -1,4 +1,4 @@
-package com.praneet.clarity.ui.screens
+package com.praneet.clarity.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -6,160 +6,98 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import com.google.firebase.auth.FirebaseAuth
-
-@Preview(showBackground = true)
-@Composable
-fun AuthScreen() {
-    val showLogin = remember { mutableStateOf(true) }
-
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        if (showLogin.value) {
-            Login { showLogin.value = false }
-        } else {
-            Signup { showLogin.value = true }
-        }
-    }
-}
+import com.praneet.clarity.auth.FirebaseAuthManager
 
 @Composable
-fun Login(goToSignup: () -> Unit){
-
-    val username = remember { mutableStateOf("") }
-    val password = remember { mutableStateOf("") }
-
-    Card(
-        modifier = Modifier
-            .padding(20.dp)
-            .fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFEDDFFB)
-        )
-    ){
-        Column(
-            modifier = Modifier.padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ){
-
-            Text(
-                text = "Login",
-                style = MaterialTheme.typography.headlineMedium
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            OutlinedTextField(
-                value = username.value,
-                onValueChange = { username.value = it },
-                label = { Text("Username") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedTextField(
-                value = password.value,
-                onValueChange = { password.value = it },
-                label = { Text("Password") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(30.dp))
-
-            Button(
-                onClick = {},
-                modifier = Modifier.fillMaxWidth(),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF6E5EAA)
-                )
-            ){
-                Text("Submit")
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            TextButton(onClick = { goToSignup() }) {
-                Text("Create Account")
-            }
-        }
-    }
-}
-
-@Composable
-fun Signup(goToLogin: () -> Unit){
-
-    val username = remember { mutableStateOf("") }
+fun LoginScreen(
+    onLoginSuccess: () -> Unit
+) {
+    var isLogin by remember { mutableStateOf(true) }
     val email = remember { mutableStateOf("") }
     val password = remember { mutableStateOf("") }
+    val errorMessage = remember { mutableStateOf("") }
+    val loading = remember { mutableStateOf(false) }
 
-    Card(
+    Box(
         modifier = Modifier
-            .padding(20.dp)
-            .fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFE8F5E9)
-        )
-    ){
-        Column(
-            modifier = Modifier.padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ){
+            .fillMaxSize()
+            .padding(24.dp),
+        contentAlignment = Alignment.Center
+    ) {
 
-            Text(
-                text = "Signup",
-                style = MaterialTheme.typography.headlineMedium
-            )
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(8.dp)
+        ) {
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Column(
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
 
-            OutlinedTextField(
-                value = username.value,
-                onValueChange = { username.value = it },
-                label = { Text("Username") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedTextField(
-                value = email.value,
-                onValueChange = { email.value = it },
-                label = { Text("Email") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedTextField(
-                value = password.value,
-                onValueChange = { password.value = it },
-                label = { Text("Password") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Button(
-                onClick = {},
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF2E7D32)
+                Text(
+                    text = "Login",
+                    style = MaterialTheme.typography.headlineMedium
                 )
-            ){
-                Text("Create Account")
-            }
 
-            Spacer(modifier = Modifier.height(10.dp))
+                OutlinedTextField(
+                    value = email.value,
+                    onValueChange = { email.value = it },
+                    label = { Text("Email") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
 
-            TextButton(onClick = { goToLogin() }) {
-                Text("Already have an account? Login")
+                OutlinedTextField(
+                    value = password.value,
+                    onValueChange = { password.value = it },
+                    label = { Text("Password") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Button(
+                    onClick = {
+
+                        if (isLogin) {
+                            FirebaseAuthManager.loginUser(
+                                email.value,
+                                password.value,
+                                onSuccess = { onLoginSuccess() },
+                                onError = { errorMessage.value = it }
+                            )
+
+                        } else {
+                            FirebaseAuthManager.signupUser(
+                                email.value,
+                                password.value,
+                                onSuccess = { onLoginSuccess() },
+                                onError = { errorMessage.value = it }
+                            )
+                        }
+                    }
+                ) {
+                    Text(if (isLogin) "Login" else "Sign Up")
+                }
+                if (errorMessage.value.isNotEmpty()) {
+                    Text(
+                        text = errorMessage.value,
+                        color = Color.Red
+                    )
+                }
+                TextButton(
+                    onClick = { isLogin = !isLogin }
+                ) {
+                    Text(
+                        if (isLogin)
+                            "Don't have an account? Sign Up"
+                        else
+                            "Already have an account? Login"
+                    )
+                }
             }
         }
     }

@@ -2,8 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-
-    id("com.google.gms.google-services") version "4.4.1" apply false
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -11,7 +10,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.clarity"
+        applicationId = "com.praneet.clarity"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
@@ -58,6 +57,6 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-    implementation("com.google.firebase:firebase-auth-ktx:23.0.1")
-
+    implementation("com.google.firebase:firebase-auth-ktx:23.0.0")
+    implementation("androidx.navigation:navigation-compose:2.7.7")
 }
