@@ -23,12 +23,14 @@ import com.google.firebase.auth.FirebaseAuth
 import com.praneet.clarity.ui.components.EnergyCheckSheet
 import com.praneet.clarity.viewmodel.FocusViewModel
 import com.praneet.clarity.utils.AlarmHelper
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onLogout: () -> Unit,
-    focusViewModel: FocusViewModel
+    focusViewModel: FocusViewModel,
+    onNavigateToStats: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var showAddGoalDialog by remember { mutableStateOf(false) }
@@ -72,6 +74,9 @@ fun HomeScreen(
                             ) 
                         },
                         actions = {
+                            IconButton(onClick = onNavigateToStats) {
+                                Text("📈", fontSize = 20.sp)
+                            }
                             TextButton(onClick = {
                                 FirebaseAuth.getInstance().signOut()
                                 onLogout()
@@ -105,36 +110,27 @@ fun HomeScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            "Hi, Focus Friend! ✨", 
-                            fontSize = 22.sp, 
-                            fontWeight = FontWeight.Bold, 
-                            color = deepText
-                        )
-                        Text(
-                            "Ready for some deep work?", 
-                            fontSize = 14.sp, 
-                            color = deepText.copy(alpha = 0.6f)
-                        )
+                        
+                        // --- 1. TIME AWARENESS CARD ---
+                        TimeAwarenessCard(accentPink, softRose)
 
                         Spacer(modifier = Modifier.height(24.dp))
 
-                        // TIME PICKER
+                        // --- 2. TIME PICKER ---
                         Text(
-                            "Pick your focus time ☁️", 
+                            "Focus Duration ☁️", 
                             fontSize = 14.sp, 
                             fontWeight = FontWeight.Medium, 
                             color = deepText.copy(alpha = 0.7f)
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         
-                        val timeOptions = listOf(5, 10, 15, 25, 45, 60)
+                        val timeOptions = listOf(5, 15, 25, 45, 60)
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             items(timeOptions) { mins ->
                                 FilterChip(
                                     selected = focusViewModel.initialSelectedMinutes == mins,
                                     onClick = { 
-                                        // Update state without starting the timer yet
                                         focusViewModel.startTimer(mins)
                                         focusViewModel.stopTimer()
                                     },
@@ -150,6 +146,7 @@ fun HomeScreen(
 
                         Spacer(modifier = Modifier.height(24.dp))
 
+                        // --- 3. GOALS SECTION ---
                         Row(
                             modifier = Modifier.fillMaxWidth(), 
                             horizontalArrangement = Arrangement.SpaceBetween, 
@@ -168,7 +165,6 @@ fun HomeScreen(
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // List of Goals
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             focusViewModel.goals.forEach { goalMap ->
                                 val id = goalMap["id"] as String
@@ -181,7 +177,7 @@ fun HomeScreen(
                                 CuteGoalCard(
                                     title = title,
                                     progress = progress,
-                                    status = if (progress >= 1f) "Done!" else "${(progress * 100).toInt()}%",
+                                    status = "${current}m / ${target}m",
                                     accent = if (isSelected) accentPink else Color(0xFFBAE6FD),
                                     isSelected = isSelected,
                                     onClick = { focusViewModel.selectGoal(id, title) }
@@ -191,14 +187,20 @@ fun HomeScreen(
 
                         Spacer(modifier = Modifier.weight(1f))
 
-                        // START BUTTON
+                        // --- 4. START BUTTON ---
                         Button(
                             onClick = {
-                                focusViewModel.startTimer(focusViewModel.initialSelectedMinutes)
-                                AlarmHelper.scheduleAlarm(context, focusViewModel.initialSelectedMinutes)
+                                if (focusViewModel.selectedGoalId != null) {
+                                    focusViewModel.startTimer(focusViewModel.initialSelectedMinutes)
+                                    AlarmHelper.scheduleAlarm(context, focusViewModel.initialSelectedMinutes)
+                                }
                             },
+                            enabled = focusViewModel.selectedGoalId != null,
                             shape = CircleShape,
-                            colors = ButtonDefaults.buttonColors(containerColor = accentPink),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = accentPink,
+                                disabledContainerColor = accentPink.copy(alpha = 0.5f)
+                            ),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(60.dp),
@@ -211,10 +213,14 @@ fun HomeScreen(
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(20.dp))
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        // --- 5. DAILY STATS (Bottom) ---
+                        DailyStatsRow(deepText, accentPink)
+
+                        Spacer(modifier = Modifier.height(24.dp))
                     }
 
-                    // Dialog for adding goals
                     if (showAddGoalDialog) {
                         LocalAddGoalDialog(
                             onDismiss = { showAddGoalDialog = false },
@@ -225,7 +231,6 @@ fun HomeScreen(
                         )
                     }
 
-                    // Bottom sheet for energy level
                     if (focusViewModel.showEnergySheet) {
                         EnergyCheckSheet(
                             onDismiss = { energyLevel ->
@@ -236,6 +241,58 @@ fun HomeScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun TimeAwarenessCard(accent: Color, bg: Color) {
+    val calendar = Calendar.getInstance()
+    val hour = calendar.get(Calendar.HOUR_OF_DAY)
+    val remainingHours = 24 - hour
+    val progress = (hour.toFloat() / 24f)
+
+    Surface(
+        color = Color.White,
+        shape = RoundedCornerShape(28.dp),
+        shadowElevation = 2.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(60.dp), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(
+                    progress = { progress },
+                    color = accent,
+                    trackColor = bg,
+                    strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+                )
+                Text("${(progress * 100).toInt()}%", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            }
+            Spacer(Modifier.width(16.dp))
+            Column {
+                Text("Today is ${(progress * 100).toInt()}% complete", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text("$remainingHours hours left to make an impact ✨", fontSize = 12.sp, color = Color.Gray)
+            }
+        }
+    }
+}
+
+@Composable
+fun DailyStatsRow(textCol: Color, accent: Color) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        CuteStatItem("2h 15m", "Focus", accent, textCol)
+        CuteStatItem("6", "Sessions", Color(0xFF7DD3FC), textCol)
+        CuteStatItem("🔥 3", "Streak", Color(0xFF4ADE80), textCol)
+    }
+}
+
+@Composable
+fun CuteStatItem(value: String, label: String, color: Color, textCol: Color) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(value, color = color, fontWeight = FontWeight.Black, fontSize = 16.sp)
+        Text(label, color = textCol.copy(alpha = 0.5f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
     }
 }
 

@@ -22,6 +22,11 @@ class FocusViewModel(private val repository: FocusRepository) : ViewModel() {
     // --- GOAL STATE ---
     var goals = mutableStateListOf<Map<String, Any>>()
         private set
+    
+    // --- SESSION STATE ---
+    var sessions = mutableStateListOf<Map<String, Any>>()
+        private set
+
     private val firestore = FirebaseFirestore.getInstance()
     
     var initialSelectedMinutes by mutableStateOf(25)
@@ -41,6 +46,7 @@ class FocusViewModel(private val repository: FocusRepository) : ViewModel() {
 
     init {
         loadGoals()
+        loadSessions()
     }
 
     private fun loadGoals() {
@@ -52,9 +58,21 @@ class FocusViewModel(private val repository: FocusRepository) : ViewModel() {
                     data["id"] = doc.id
                     goals.add(data)
                 }
-                // Auto-select first goal if none selected
                 if (selectedGoalId == null && goals.isNotEmpty()) {
                     selectGoal(goals[0]["id"] as String, goals[0]["title"] as String)
+                }
+            }
+        }
+    }
+
+    private fun loadSessions() {
+        viewModelScope.launch {
+            repository.getAllSessions().collect { snapshot ->
+                sessions.clear()
+                for (doc in snapshot.documents) {
+                    val data = doc.data?.toMutableMap() ?: mutableMapOf()
+                    data["id"] = doc.id
+                    sessions.add(data)
                 }
             }
         }
@@ -65,9 +83,9 @@ class FocusViewModel(private val repository: FocusRepository) : ViewModel() {
         selectedGoalTitle = title
     }
 
-    fun createNewGoal(title: String, hours: Int) {
+    fun createNewGoal(title: String, minutes: Int) {
         viewModelScope.launch {
-            repository.addGoal(title, hours)
+            repository.addGoal(title, minutes)
         }
     }
 
