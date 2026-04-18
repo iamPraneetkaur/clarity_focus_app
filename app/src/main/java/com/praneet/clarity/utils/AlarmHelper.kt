@@ -17,14 +17,27 @@ object AlarmHelper {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        // Calculate time: Current time + minutes converted to milliseconds
-        val triggerTime = System.currentTimeMillis() + (minutes * 60 * 1000)
+        val triggerTime = System.currentTimeMillis() + (minutes * 60 * 1000L)
 
-        // This ensures the alarm fires even if the phone is in battery-saving "Doze" mode
         alarmManager.setExactAndAllowWhileIdle(
             AlarmManager.RTC_WAKEUP,
             triggerTime,
             pendingIntent
         )
+    }
+
+    fun cancelAlarm(context: Context) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(context, FocusReceiver::class.java)
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            0,
+            intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_NO_CREATE
+        )
+        if (pendingIntent != null) {
+            alarmManager.cancel(pendingIntent)
+            pendingIntent.cancel()
+        }
     }
 }

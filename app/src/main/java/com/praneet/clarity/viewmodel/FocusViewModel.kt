@@ -7,23 +7,32 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
 import com.praneet.clarity.data.model.EnergyLevel
 import com.praneet.clarity.data.model.FocusSession
 import com.praneet.clarity.data.repository.FocusRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collect
+import com.google.firebase.firestore.FirebaseFirestore
 
 class FocusViewModel(private val repository: FocusRepository) : ViewModel() {
 
     // --- GOAL STATE ---
-    // This list will automatically update your UI when Firestore data changes
     var goals = mutableStateListOf<Map<String, Any>>()
         private set
+    private val firestore = FirebaseFirestore.getInstance()
+    
+    var initialSelectedMinutes by mutableStateOf(25)
+        private set
+
+    var selectedGoalId by mutableStateOf<String?>(null)
+    var selectedGoalTitle by mutableStateOf<String?>(null)
 
     // --- TIMER STATE ---
     private var timerJob: Job? = null
-    var timeLeft by mutableStateOf(25 * 60L) // Default 25 minutes in seconds
+    var timeLeft by mutableStateOf(25 * 60L)
     var isTimerRunning by mutableStateOf(false)
 
     // --- UI STATE ---
@@ -36,7 +45,6 @@ class FocusViewModel(private val repository: FocusRepository) : ViewModel() {
 
     private fun loadGoals() {
         viewModelScope.launch {
-            // FIX: We "collect" the Flow from the repository instead of using a listener
             repository.getGoals().collect { snapshot ->
                 goals.clear()
                 for (doc in snapshot.documents) {
@@ -44,8 +52,17 @@ class FocusViewModel(private val repository: FocusRepository) : ViewModel() {
                     data["id"] = doc.id
                     goals.add(data)
                 }
+                // Auto-select first goal if none selected
+                if (selectedGoalId == null && goals.isNotEmpty()) {
+                    selectGoal(goals[0]["id"] as String, goals[0]["title"] as String)
+                }
             }
         }
+    }
+
+    fun selectGoal(id: String, title: String) {
+        selectedGoalId = id
+        selectedGoalTitle = title
     }
 
     fun createNewGoal(title: String, hours: Int) {
@@ -55,7 +72,8 @@ class FocusViewModel(private val repository: FocusRepository) : ViewModel() {
     }
 
     fun startTimer(durationMinutes: Int) {
-        timerJob?.cancel() // Reset any existing timer
+        initialSelectedMinutes = durationMinutes
+        timerJob?.cancel()
 
         timeLeft = durationMinutes * 60L
         isTimerRunning = true
@@ -69,28 +87,55 @@ class FocusViewModel(private val repository: FocusRepository) : ViewModel() {
         }
     }
 
-    private fun onTimerFinished() {
+    fun stopTimer() {
+        timerJob?.cancel()
         isTimerRunning = false
-        showEnergySheet = true // Shows the pink mood check-in sheet
+        timeLeft = initialSelectedMinutes * 60L
     }
 
-    fun onSessionFinished() {
+    private fun onTimerFinished() {
+        isTimerRunning = false
         showEnergySheet = true
     }
 
-    fun completeSession(goalId: String, duration: Long, energy: EnergyLevel) {
-        viewModelScope.launch {
-            val session = FocusSession(
-                goalId = goalId,
-                durationMinutes = duration,
-                energyLevel = energy
-            )
-            // repository.saveSession(session)
-            showEnergySheet = false
+    fun completeSession(energyLevel: String) {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val goalId = selectedGoalId ?: "general"
+        val duration = initialSelectedMinutes
+
+        val sessionData = hashMapOf(
+            "userId" to userId,
+            "goalId" to goalId,
+            "duration" to duration,
+            "energy" to energyLevel,
+            "timestamp" to com.google.firebase.Timestamp.now()
+        )
+
+        firestore.collection("sessions")
+            .add(sessionData)
+            .addOnSuccessListener {
+                updateGoalProgress(goalId, duration)
+                showEnergySheet = false
+            }
+    }
+
+    private fun updateGoalProgress(goalId: String, addedMinutes: Int) {
+        if (goalId == "general") return
+        
+        val goalRef = firestore.collection("users")
+            .document(FirebaseAuth.getInstance().currentUser?.uid ?: "")
+            .collection("goals")
+            .document(goalId)
+
+        firestore.runTransaction { transaction ->
+            val snapshot = transaction.get(goalRef)
+            val currentMinutes = snapshot.getLong("currentMinutes") ?: 0L
+            transaction.update(goalRef, "currentMinutes", currentMinutes + addedMinutes)
+        }.addOnSuccessListener {
+            loadGoals()
         }
     }
 
-    // This Factory is what prevents the crash during navigation
     companion object {
         fun provideFactory(repository: FocusRepository): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
