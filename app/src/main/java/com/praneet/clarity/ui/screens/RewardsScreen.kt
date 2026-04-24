@@ -26,13 +26,17 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RewardsScreen(viewModel: FocusViewModel) {
+fun RewardsScreen(
+    viewModel: FocusViewModel,
+    onNavigateToSettings: () -> Unit = {}
+) {
     // Colors from the image
-    val darkBg = Color(0xFF0D0D0D)
-    val cardBg = Color(0xFF1A1A1C)
-    val accentBlue = Color(0xFF74A2FF)
-    val accentPurple = Color(0xFFC084FC)
-    val greyText = Color(0xFF8E8E93)
+    val darkBg = MaterialTheme.colorScheme.background
+    val cardBg = MaterialTheme.colorScheme.surfaceVariant
+    val accentBlue = MaterialTheme.colorScheme.primary
+    val accentPurple = MaterialTheme.colorScheme.secondary
+    val greyText = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+    val onSurface = MaterialTheme.colorScheme.onSurface
 
     // --- DYNAMIC DATA CALCULATION ---
     val totalMinutesFocused = viewModel.goals.sumOf { (it["currentMinutes"] as? Long ?: 0L).toInt() }
@@ -63,19 +67,19 @@ fun RewardsScreen(viewModel: FocusViewModel) {
                         Surface(
                             modifier = Modifier.size(36.dp),
                             shape = CircleShape,
-                            color = Color.White.copy(alpha = 0.1f)
+                            color = onSurface.copy(alpha = 0.1f)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Text("👤", fontSize = 20.sp)
                             }
                         }
                         Spacer(Modifier.width(12.dp))
-                        Text("Clarity", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp)
+                        Text("Clarity", color = onSurface, fontWeight = FontWeight.Bold, fontSize = 22.sp)
                     }
                 },
                 actions = {
-                    IconButton(onClick = {}) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings", tint = Color.White.copy(alpha = 0.6f))
+                    IconButton(onClick = onNavigateToSettings) {
+                        Icon(Icons.Default.Settings, contentDescription = "Settings", tint = onSurface.copy(alpha = 0.6f))
                     }
                 }
             )
@@ -101,7 +105,7 @@ fun RewardsScreen(viewModel: FocusViewModel) {
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text(
                             formattedPoints,
-                            color = Color.White,
+                            color = onSurface,
                             fontSize = 48.sp,
                             fontWeight = FontWeight.Black
                         )
@@ -137,7 +141,7 @@ fun RewardsScreen(viewModel: FocusViewModel) {
                         Surface(
                             modifier = Modifier.size(44.dp),
                             shape = RoundedCornerShape(12.dp),
-                            color = Color(0xFF2D1B4E)
+                            color = accentPurple.copy(alpha = 0.1f)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Text("⭐", color = accentPurple)
@@ -145,7 +149,7 @@ fun RewardsScreen(viewModel: FocusViewModel) {
                         }
                         Spacer(Modifier.width(16.dp))
                         Column {
-                            Text(statusTitle, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                            Text(statusTitle, color = onSurface, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                             Text(statusDesc, color = greyText, fontSize = 13.sp)
                         }
                     }
@@ -155,7 +159,7 @@ fun RewardsScreen(viewModel: FocusViewModel) {
             // Main Reward Card (10-Day Streak Example - Practical logic would count consecutive days in session collection)
             item {
                 Surface(
-                    color = Color(0xFF1E222E),
+                    color = accentBlue.copy(alpha = 0.05f),
                     shape = RoundedCornerShape(32.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -178,7 +182,7 @@ fun RewardsScreen(viewModel: FocusViewModel) {
                                 Text(
                                     "MASTERED",
                                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                                    color = Color.Black,
+                                    color = MaterialTheme.colorScheme.onPrimary,
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Black
                                 )
@@ -186,7 +190,7 @@ fun RewardsScreen(viewModel: FocusViewModel) {
                             Spacer(Modifier.height(16.dp))
                             Text(
                                 "Focus Streak",
-                                color = Color.White,
+                                color = onSurface,
                                 fontSize = 32.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -209,7 +213,7 @@ fun RewardsScreen(viewModel: FocusViewModel) {
                                     }
                                 }
                                 Spacer(Modifier.width(16.dp))
-                                Text("+12 PTS / Min", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                                Text("+12 PTS / Min", color = onSurface, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                             }
                         }
                     }
@@ -236,12 +240,12 @@ fun RewardsScreen(viewModel: FocusViewModel) {
                                 modifier = Modifier.size(120.dp),
                                 color = accentPurple,
                                 strokeWidth = 8.dp,
-                                trackColor = Color.White.copy(alpha = 0.05f)
+                                trackColor = onSurface.copy(alpha = 0.05f)
                             )
                             Surface(
                                 modifier = Modifier.size(80.dp),
                                 shape = CircleShape,
-                                color = Color.Black
+                                color = onSurface.copy(alpha = 0.1f)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Text("⏱️", fontSize = 32.sp)
@@ -249,7 +253,7 @@ fun RewardsScreen(viewModel: FocusViewModel) {
                             }
                         }
                         Spacer(Modifier.height(24.dp))
-                        Text("Centurion", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                        Text("Centurion", color = onSurface, fontWeight = FontWeight.Bold, fontSize = 20.sp)
                         Text("${totalMinutesFocused / 60} / 100 Hours Focused", color = greyText, fontSize = 14.sp)
                         Spacer(Modifier.height(8.dp))
                         Text("${(progress * 100).toInt()}% towards goal", color = accentPurple, fontSize = 12.sp, fontWeight = FontWeight.Bold)

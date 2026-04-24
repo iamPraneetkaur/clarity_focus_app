@@ -16,7 +16,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.praneet.clarity.ui.LoginScreen
-import com.praneet.clarity.ui.theme.ClarityTheme
+import com.praneet.clarity.ui.theme.SereneTheme
 import com.google.firebase.FirebaseApp
 import com.praneet.clarity.navigation.AppNavGraph
 
@@ -25,7 +25,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         FirebaseApp.initializeApp(this)
         setContent {
-            ClarityTheme {
+            SereneTheme {
                 // 👇 ADD THE PERMISSION LOGIC HERE
                 val permissionLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.RequestPermission()

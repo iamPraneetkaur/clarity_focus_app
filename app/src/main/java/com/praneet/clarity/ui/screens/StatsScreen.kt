@@ -21,12 +21,16 @@ import com.praneet.clarity.viewmodel.FocusViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StatsScreen(viewModel: FocusViewModel) {
-    val darkBg = Color(0xFF0D0D0D)
-    val cardBg = Color(0xFF1A1A1C)
-    val accentBlue = Color(0xFF74A2FF)
-    val accentPurple = Color(0xFFC084FC)
-    val greyText = Color(0xFF8E8E93)
+fun StatsScreen(
+    viewModel: FocusViewModel,
+    onNavigateToSettings: () -> Unit = {}
+) {
+    val darkBg = MaterialTheme.colorScheme.background
+    val cardBg = MaterialTheme.colorScheme.surfaceVariant
+    val accentBlue = MaterialTheme.colorScheme.primary
+    val accentPurple = MaterialTheme.colorScheme.secondary
+    val greyText = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+    val onSurface = MaterialTheme.colorScheme.onSurface
 
     Scaffold(
         containerColor = darkBg,
@@ -38,19 +42,19 @@ fun StatsScreen(viewModel: FocusViewModel) {
                         Surface(
                             modifier = Modifier.size(36.dp),
                             shape = CircleShape,
-                            color = Color.White.copy(alpha = 0.1f)
+                            color = onSurface.copy(alpha = 0.1f)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Text("👤", fontSize = 20.sp)
                             }
                         }
                         Spacer(Modifier.width(12.dp))
-                        Text("Clarity", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp)
+                        Text("Clarity", color = onSurface, fontWeight = FontWeight.Bold, fontSize = 22.sp)
                     }
                 },
                 actions = {
-                    IconButton(onClick = {}) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings", tint = Color.White.copy(alpha = 0.6f))
+                    IconButton(onClick = onNavigateToSettings) {
+                        Icon(Icons.Default.Settings, contentDescription = "Settings", tint = onSurface.copy(alpha = 0.6f))
                     }
                 }
             )
@@ -68,7 +72,7 @@ fun StatsScreen(viewModel: FocusViewModel) {
                 Column(Modifier.padding(top = 8.dp)) {
                     Text(
                         "Productivity",
-                        color = Color.White,
+                        color = onSurface,
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -101,13 +105,13 @@ fun StatsScreen(viewModel: FocusViewModel) {
                             verticalAlignment = Alignment.Top
                         ) {
                             Column {
-                                Text("Weekly Focus", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                                Text("Weekly Focus", color = onSurface, fontWeight = FontWeight.Bold, fontSize = 20.sp)
                                 Spacer(Modifier.height(4.dp))
                                 Text("Deep work hours per day", color = greyText, fontSize = 13.sp)
                             }
                             
                             Surface(
-                                color = Color.Black,
+                                color = onSurface.copy(alpha = 0.05f),
                                 shape = RoundedCornerShape(16.dp)
                             ) {
                                 Text(
@@ -143,7 +147,7 @@ fun StatsScreen(viewModel: FocusViewModel) {
                                             .width(28.dp)
                                             .fillMaxHeight()
                                             .clip(CircleShape)
-                                            .background(Color.White.copy(alpha = 0.05f)),
+                                            .background(onSurface.copy(alpha = 0.05f)),
                                         contentAlignment = Alignment.BottomCenter
                                     ) {
                                         Box(
@@ -157,7 +161,7 @@ fun StatsScreen(viewModel: FocusViewModel) {
                                     Spacer(Modifier.height(16.dp))
                                     Text(
                                         day,
-                                        color = if (index == 2) Color.White else greyText,
+                                        color = if (index == 2) onSurface else greyText,
                                         fontSize = 10.sp,
                                         fontWeight = if (index == 2) FontWeight.Bold else FontWeight.Normal
                                     )
@@ -180,7 +184,7 @@ fun StatsScreen(viewModel: FocusViewModel) {
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Row(modifier = Modifier.fillMaxWidth()) {
-                            Text("Deep Work Ratio", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Text("Deep Work Ratio", color = onSurface, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                         }
                         Spacer(Modifier.height(32.dp))
                         Box(
@@ -192,12 +196,12 @@ fun StatsScreen(viewModel: FocusViewModel) {
                                 modifier = Modifier.fillMaxSize(),
                                 color = accentPurple,
                                 strokeWidth = 14.dp,
-                                trackColor = Color.White.copy(alpha = 0.05f),
+                                trackColor = onSurface.copy(alpha = 0.05f),
                                 strokeCap = StrokeCap.Round
                             )
                             Text(
                                 text = "65%",
-                                color = Color.White,
+                                color = onSurface,
                                 fontSize = 28.sp,
                                 fontWeight = FontWeight.Bold
                             )

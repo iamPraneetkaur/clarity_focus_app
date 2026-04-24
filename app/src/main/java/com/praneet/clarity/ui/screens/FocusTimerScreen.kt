@@ -32,10 +32,15 @@ fun FocusTimerScreen(
     } else 1f
 
 
+    val backgroundColor = MaterialTheme.colorScheme.background
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val secondaryColor = MaterialTheme.colorScheme.secondary
+    val onSurface = MaterialTheme.colorScheme.onSurface
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF8FAF9))
+            .background(backgroundColor)
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -44,7 +49,7 @@ fun FocusTimerScreen(
             text = "Stay Focused ✨",
             fontSize = 24.sp,
             fontWeight = FontWeight.Medium,
-            color = Color(0xFF4A4A4A)
+            color = onSurface
         )
 
         Spacer(modifier = Modifier.height(48.dp))
@@ -55,7 +60,7 @@ fun FocusTimerScreen(
             CircularProgressIndicator(
                 progress = { 1f },
                 modifier = Modifier.size(280.dp),
-                color = Color(0xFFFCE4EC),
+                color = secondaryColor.copy(alpha = 0.2f),
                 strokeWidth = 12.dp,
                 strokeCap = StrokeCap.Round
             )
@@ -63,7 +68,7 @@ fun FocusTimerScreen(
             CircularProgressIndicator(
                 progress = { progress },
                 modifier = Modifier.size(280.dp),
-                color = Color(0xFFF472B6),
+                color = primaryColor,
                 strokeWidth = 12.dp,
                 strokeCap = StrokeCap.Round
             )
@@ -73,7 +78,7 @@ fun FocusTimerScreen(
                 text = String.format("%02d:%02d", minutes, seconds),
                 fontSize = 64.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF4A4A4A)
+                color = onSurface
             )
         }
 
@@ -82,12 +87,12 @@ fun FocusTimerScreen(
         // Cancel Button
         Button(
             onClick = onCancel,
-            colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surface),
             shape = RoundedCornerShape(24.dp),
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
             modifier = Modifier.width(200.dp).height(56.dp)
         ) {
-            Text("Cancel Session", color = Color.Gray, fontWeight = FontWeight.SemiBold)
+            Text("Cancel Session", color = onSurface.copy(alpha = 0.6f), fontWeight = FontWeight.SemiBold)
         }
     }
 }

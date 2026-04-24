@@ -1,12 +1,14 @@
 package com.praneet.clarity.ui.screens
 
 import androidx.compose.animation.*
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,7 +16,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -23,23 +28,39 @@ import com.google.firebase.auth.FirebaseAuth
 import com.praneet.clarity.ui.components.EnergyCheckSheet
 import com.praneet.clarity.viewmodel.FocusViewModel
 import com.praneet.clarity.utils.AlarmHelper
+import java.text.SimpleDateFormat
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onLogout: () -> Unit,
     focusViewModel: FocusViewModel,
-    onNavigateToStats: () -> Unit = {}
+    onNavigateToStats: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var showAddGoalDialog by remember { mutableStateOf(false) }
     
-    // 🎨 Soft Minimalism Palette
-    val offWhite = Color(0xFFF8FAF9)
-    val softRose = Color(0xFFFCE4EC)
-    val deepText = Color(0xFF4A4A4A)
-    val accentPink = Color(0xFFF472B6)
+    // 🎨 Use Palette from Theme
+    val bgGreen = MaterialTheme.colorScheme.background
+    val darkGreen = MaterialTheme.colorScheme.primary
+    val lightGreen = MaterialTheme.colorScheme.secondary
+    val greyText = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+
+    val currentUser = FirebaseAuth.getInstance().currentUser
+    val userName = currentUser?.displayName?.split(" ")?.firstOrNull() ?: "Alex"
+    
+    val calendar = Calendar.getInstance()
+    val hourOfDay = calendar.get(Calendar.HOUR_OF_DAY)
+    val greeting = when (hourOfDay) {
+        in 0..11 -> "Good Morning"
+        in 12..16 -> "Good Afternoon"
+        else -> "Good Evening"
+    }
+    
+    val dateFormat = SimpleDateFormat("EEEE, MMM d", Locale.getDefault())
+    val dateString = dateFormat.format(Date()).uppercase()
 
     // THE SWITCH: Toggles between Dashboard and Immersive Timer
     AnimatedContent(
@@ -59,167 +80,212 @@ fun HomeScreen(
             )
         } else {
             Scaffold(
-                containerColor = offWhite,
+                containerColor = bgGreen,
                 topBar = {
-                    CenterAlignedTopAppBar(
-                        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                            containerColor = Color.Transparent
-                        ),
-                        title = { 
-                            Text(
-                                "Clarity ✨", 
-                                color = deepText, 
-                                fontWeight = FontWeight.SemiBold, 
-                                fontSize = 20.sp
-                            ) 
-                        },
-                        actions = {
-                            IconButton(onClick = onNavigateToStats) {
-                                Text("📈", fontSize = 20.sp)
-                            }
-                            TextButton(onClick = {
-                                FirebaseAuth.getInstance().signOut()
-                                onLogout()
-                            }) {
-                                Text(
-                                    "Exit", 
-                                    color = accentPink, 
-                                    fontSize = 14.sp, 
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Profile Image Placeholder
+                        Surface(
+                            modifier = Modifier.size(48.dp),
+                            shape = CircleShape,
+                            color = Color.LightGray
+                        ) {
+                            Icon(
+                                Icons.Default.Person, 
+                                contentDescription = "Profile",
+                                modifier = Modifier.padding(8.dp),
+                                tint = Color.Gray
+                            )
                         }
-                    )
+                        
+                        Text(
+                            "Clarity", 
+                            color = darkGreen, 
+                            fontWeight = FontWeight.Bold, 
+                            fontSize = 20.sp
+                        )
+                        
+                        IconButton(onClick = onNavigateToSettings) {
+                            Icon(
+                                Icons.Outlined.Settings, 
+                                contentDescription = "Settings", 
+                                tint = darkGreen
+                            )
+                        }
+                    }
                 }
             ) { paddingValues ->
-                Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-                    // Decorative Background Emoji
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .padding(horizontal = 24.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Greeting
                     Text(
-                        "🌸", 
-                        fontSize = 80.sp, 
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .offset(x = 20.dp, y = (-20).dp)
-                            .alpha(0.3f)
+                        text = "$greeting, $userName",
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = darkGreen
+                    )
+                    Text(
+                        text = dateString,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = greyText,
+                        letterSpacing = 1.sp
                     )
 
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Spacer(modifier = Modifier.height(32.dp))
+                    
+                    // --- 1. TIME AWARENESS CARD ---
+                    TimeAwarenessCard(darkGreen, lightGreen)
+
+                    Spacer(modifier = Modifier.height(40.dp))
+
+                    // --- 2. GOALS SECTION ---
+                    Row(
+                        modifier = Modifier.fillMaxWidth(), 
+                        horizontalArrangement = Arrangement.SpaceBetween, 
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        
-                        // --- 1. TIME AWARENESS CARD ---
-                        TimeAwarenessCard(accentPink, softRose)
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        // --- 2. TIME PICKER ---
                         Text(
-                            "Focus Duration ☁️", 
-                            fontSize = 14.sp, 
-                            fontWeight = FontWeight.Medium, 
-                            color = deepText.copy(alpha = 0.7f)
+                            "Your Goals", 
+                            color = darkGreen, 
+                            fontWeight = FontWeight.Bold, 
+                            fontSize = 22.sp
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        
-                        val timeOptions = listOf(5, 15, 25, 45, 60)
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            items(timeOptions) { mins ->
-                                FilterChip(
-                                    selected = focusViewModel.initialSelectedMinutes == mins,
-                                    onClick = { 
-                                        focusViewModel.startTimer(mins)
-                                        focusViewModel.stopTimer()
-                                    },
-                                    label = { Text("${mins}m") },
-                                    shape = CircleShape,
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = softRose,
-                                        selectedLabelColor = accentPink
-                                    )
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        // --- 3. GOALS SECTION ---
-                        Row(
-                            modifier = Modifier.fillMaxWidth(), 
-                            horizontalArrangement = Arrangement.SpaceBetween, 
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                "Select a Goal 🎀", 
-                                color = deepText, 
-                                fontWeight = FontWeight.Bold, 
-                                fontSize = 16.sp
-                            )
-                            IconButton(onClick = { showAddGoalDialog = true }) {
-                                Text("➕", fontSize = 20.sp)
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            focusViewModel.goals.forEach { goalMap ->
-                                val id = goalMap["id"] as String
-                                val title = goalMap["title"] as? String ?: "Unnamed"
-                                val target = (goalMap["targetMinutes"] as? Number)?.toInt() ?: 60
-                                val current = (goalMap["currentMinutes"] as? Number)?.toLong() ?: 0L
-                                val progress = if (target > 0) (current.toFloat() / (target)) else 0f
-                                val isSelected = focusViewModel.selectedGoalId == id
-
-                                CuteGoalCard(
-                                    title = title,
-                                    progress = progress,
-                                    status = "${current}m / ${target}m",
-                                    accent = if (isSelected) accentPink else Color(0xFFBAE6FD),
-                                    isSelected = isSelected,
-                                    onClick = { focusViewModel.selectGoal(id, title) }
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.weight(1f))
-
-                        // --- 4. START BUTTON ---
-                        Button(
-                            onClick = {
-                                if (focusViewModel.selectedGoalId != null) {
-                                    focusViewModel.startTimer(focusViewModel.initialSelectedMinutes)
-                                    AlarmHelper.scheduleAlarm(context, focusViewModel.initialSelectedMinutes)
-                                }
-                            },
-                            enabled = focusViewModel.selectedGoalId != null,
-                            shape = CircleShape,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = accentPink,
-                                disabledContainerColor = accentPink.copy(alpha = 0.5f)
-                            ),
+                        Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .height(60.dp),
-                            elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(lightGreen)
+                                .clickable { showAddGoalDialog = true },
+                            contentAlignment = Alignment.Center
                         ) {
+                            Icon(Icons.Default.Add, contentDescription = "Add Goal", tint = darkGreen)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        focusViewModel.goals.forEach { goalMap ->
+                            val id = goalMap["id"] as String
+                            val title = goalMap["title"] as? String ?: "Unnamed"
+                            val isSelected = focusViewModel.selectedGoalId == id
+
+                            GoalChip(
+                                title = title,
+                                isSelected = isSelected,
+                                onClick = { focusViewModel.selectGoal(id, title) },
+                                darkGreen = darkGreen,
+                                lightGrey = Color(0xFFF1F1F1)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    // --- 3. DURATION SECTION ---
+                    Text(
+                        "DURATION", 
+                        fontSize = 12.sp, 
+                        fontWeight = FontWeight.Bold, 
+                        color = greyText,
+                        letterSpacing = 1.sp
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        val timeOptions = listOf(25, 45, 60)
+                        timeOptions.forEach { mins ->
+                            DurationCircle(
+                                mins = mins,
+                                isSelected = focusViewModel.initialSelectedMinutes == mins,
+                                onClick = { 
+                                    focusViewModel.startTimer(mins)
+                                    focusViewModel.stopTimer()
+                                },
+                                darkGreen = darkGreen,
+                                lightGreen = lightGreen
+                            )
+                        }
+                        
+                        // Edit Icon Circle
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFF1F1F1)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Edit, contentDescription = "Custom Duration", tint = greyText, modifier = Modifier.size(20.dp))
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(48.dp))
+
+                    // --- 4. START BUTTON ---
+                    Button(
+                        onClick = {
+                            if (focusViewModel.selectedGoalId != null) {
+                                focusViewModel.startTimer(focusViewModel.initialSelectedMinutes)
+                                AlarmHelper.scheduleAlarm(context, focusViewModel.initialSelectedMinutes)
+                            }
+                        },
+                        enabled = focusViewModel.selectedGoalId != null,
+                        shape = RoundedCornerShape(40.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = darkGreen,
+                            disabledContainerColor = darkGreen.copy(alpha = 0.5f)
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(72.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White)
+                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                "Start Focus Session ☁️", 
+                                "Start Focus Session", 
                                 fontWeight = FontWeight.Bold, 
+                                fontSize = 18.sp,
                                 color = Color.White
                             )
                         }
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        // --- 5. DAILY STATS (Bottom) ---
-                        DailyStatsRow(deepText, accentPink)
-
-                        Spacer(modifier = Modifier.height(24.dp))
                     }
+
+                    Spacer(modifier = Modifier.height(48.dp))
+
+                    // --- 5. DAILY STATS (Bottom) ---
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        StatItem(Icons.Default.Schedule, "Focus:", "2h 15m", darkGreen)
+                        Divider(modifier = Modifier.height(24.dp).width(1.dp), color = Color.LightGray)
+                        StatItem(Icons.Default.CheckCircle, "Completed:", "3", darkGreen)
+                    }
+
+                    Spacer(modifier = Modifier.height(32.dp))
 
                     if (showAddGoalDialog) {
                         LocalAddGoalDialog(
@@ -245,7 +311,7 @@ fun HomeScreen(
 }
 
 @Composable
-fun TimeAwarenessCard(accent: Color, bg: Color) {
+fun TimeAwarenessCard(darkGreen: Color, lightGreen: Color) {
     val calendar = Calendar.getInstance()
     val hour = calendar.get(Calendar.HOUR_OF_DAY)
     val remainingHours = 24 - hour
@@ -253,93 +319,120 @@ fun TimeAwarenessCard(accent: Color, bg: Color) {
 
     Surface(
         color = Color.White,
-        shape = RoundedCornerShape(28.dp),
-        shadowElevation = 2.dp,
+        shape = RoundedCornerShape(48.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(60.dp), contentAlignment = Alignment.Center) {
+        Row(
+            modifier = Modifier.padding(32.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "$remainingHours hours",
+                    fontSize = 48.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = darkGreen,
+                    lineHeight = 48.sp
+                )
+                Text(
+                    text = "remain in your\nday",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = darkGreen.copy(alpha = 0.7f),
+                    lineHeight = 28.sp
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Make the most of\nyour time today",
+                    fontSize = 14.sp,
+                    color = Color.Gray,
+                    lineHeight = 18.sp
+                )
+            }
+            
+            Box(contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(
                     progress = { progress },
-                    color = accent,
-                    trackColor = bg,
+                    modifier = Modifier.size(100.dp),
+                    color = darkGreen,
+                    trackColor = lightGreen.copy(alpha = 0.3f),
+                    strokeWidth = 12.dp,
                     strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
                 )
-                Text("${(progress * 100).toInt()}%", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-            }
-            Spacer(Modifier.width(16.dp))
-            Column {
-                Text("Today is ${(progress * 100).toInt()}% complete", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text("$remainingHours hours left to make an impact ✨", fontSize = 12.sp, color = Color.Gray)
+                Text(
+                    "${(progress * 100).toInt()}%",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = darkGreen
+                )
             }
         }
     }
 }
 
 @Composable
-fun DailyStatsRow(textCol: Color, accent: Color) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        CuteStatItem("2h 15m", "Focus", accent, textCol)
-        CuteStatItem("6", "Sessions", Color(0xFF7DD3FC), textCol)
-        CuteStatItem("🔥 3", "Streak", Color(0xFF4ADE80), textCol)
+fun GoalChip(title: String, isSelected: Boolean, onClick: () -> Unit, darkGreen: Color, lightGrey: Color) {
+    val icon = when (title.uppercase()) {
+        "STUDY" -> Icons.Default.Book
+        "WORKOUT" -> Icons.Default.FitnessCenter
+        "CODING" -> Icons.Default.Code
+        else -> Icons.Default.Flag
     }
-}
-
-@Composable
-fun CuteStatItem(value: String, label: String, color: Color, textCol: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, color = color, fontWeight = FontWeight.Black, fontSize = 16.sp)
-        Text(label, color = textCol.copy(alpha = 0.5f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
-    }
-}
-
-@Composable
-fun CuteGoalCard(
-    title: String, 
-    progress: Float, 
-    status: String, 
-    accent: Color, 
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
+    
     Surface(
         onClick = onClick,
-        color = Color.White,
-        shape = RoundedCornerShape(28.dp),
-        shadowElevation = if (isSelected) 4.dp else 1.dp,
-        border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, accent) else null,
-        modifier = Modifier.fillMaxWidth()
+        color = if (isSelected) darkGreen else lightGrey,
+        shape = RoundedCornerShape(32.dp),
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    title, 
-                    color = Color(0xFF4A4A4A), 
-                    fontWeight = FontWeight.Bold, 
-                    fontSize = 15.sp
-                )
-                if (isSelected) Text(" ✨", fontSize = 14.sp)
-                Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    status, 
-                    color = Color(0xFF4A4A4A).copy(alpha = 0.4f), 
-                    fontSize = 11.sp
-                )
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            LinearProgressIndicator(
-                progress = { progress.coerceIn(0f, 1f) },
-                color = accent,
-                trackColor = accent.copy(alpha = 0.15f),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(10.dp)
-                    .clip(CircleShape)
+        Row(
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                icon, 
+                contentDescription = null, 
+                tint = if (isSelected) Color.White else darkGreen,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                title.uppercase(),
+                color = if (isSelected) Color.White else darkGreen.copy(alpha = 0.7f),
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp
             )
         }
+    }
+}
+
+@Composable
+fun DurationCircle(mins: Int, isSelected: Boolean, onClick: () -> Unit, darkGreen: Color, lightGreen: Color) {
+    Box(
+        modifier = Modifier
+            .size(72.dp, 48.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .background(if (isSelected) lightGreen else Color(0xFFF1F1F1))
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            "$mins min",
+            color = if (isSelected) darkGreen else Color.Gray,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+            fontSize = 14.sp
+        )
+    }
+}
+
+@Composable
+fun StatItem(icon: ImageVector, label: String, value: String, darkGreen: Color) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, contentDescription = null, tint = darkGreen.copy(alpha = 0.6f), modifier = Modifier.size(18.dp))
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(label, color = Color.Gray, fontSize = 14.sp)
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(value, color = darkGreen, fontWeight = FontWeight.Bold, fontSize = 14.sp)
     }
 }
 

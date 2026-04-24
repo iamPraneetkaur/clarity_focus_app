@@ -55,7 +55,7 @@ fun NameCard(onContinue: () -> Unit) {
                 Text(
                     text = "Let’s get to know you",
                     fontSize = 14.sp,
-                    color = Color(0xFFAFA1B7)
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
 
                 Spacer(modifier = Modifier.height(28.dp))
@@ -121,7 +121,7 @@ fun YearCard(onContinue: () -> Unit) {
                 Text(
                     text = "Let’s get to know you",
                     fontSize = 14.sp,
-                    color = Color(0xFFAFA1B7)
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
 
                 Spacer(modifier = Modifier.height(28.dp))
