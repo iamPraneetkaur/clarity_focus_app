@@ -28,7 +28,11 @@ class FocusRepository {
         goalsCollection.add(goal).await()
     }
 
-    fun getGoals() = goalsCollection.orderBy("createdAt").snapshots()
+    fun getGoals() = if (userId.isEmpty()) {
+        com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("empty").snapshots()
+    } else {
+        goalsCollection.orderBy("createdAt").snapshots()
+    }
 
     suspend fun saveSession(session: FocusSession) {
         try {
@@ -44,7 +48,11 @@ class FocusRepository {
         .limit(limit.toLong())
         .snapshots()
 
-    fun getAllSessions() = sessionsCollection
-        .whereEqualTo("userId", userId)
-        .snapshots()
+    fun getAllSessions() = if (userId.isEmpty()) {
+        com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("empty").snapshots()
+    } else {
+        sessionsCollection
+            .whereEqualTo("userId", userId)
+            .snapshots()
+    }
 }

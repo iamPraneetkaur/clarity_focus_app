@@ -33,13 +33,13 @@ fun RewardsScreen(
     // Colors from the image
     val darkBg = MaterialTheme.colorScheme.background
     val cardBg = MaterialTheme.colorScheme.surfaceVariant
-    val accentBlue = MaterialTheme.colorScheme.primary
-    val accentPurple = MaterialTheme.colorScheme.secondary
-    val greyText = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+    val accentForest = MaterialTheme.colorScheme.primary
+    val accentSage = MaterialTheme.colorScheme.secondary
+    val greyText = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
     val onSurface = MaterialTheme.colorScheme.onSurface
 
     // --- DYNAMIC DATA CALCULATION ---
-    val totalMinutesFocused = viewModel.goals.sumOf { (it["currentMinutes"] as? Long ?: 0L).toInt() }
+    val totalMinutesFocused = viewModel.sessions.sumOf { (it["duration"] as? Number)?.toLong() ?: 0L }
     val pointsEarned = totalMinutesFocused * 12 // 12 PTS per focused minute
     val formattedPoints = remember(pointsEarned) {
         NumberFormat.getNumberInstance(Locale.US).format(pointsEarned)
@@ -112,7 +112,7 @@ fun RewardsScreen(
                         Spacer(Modifier.width(8.dp))
                         Text(
                             "PTS",
-                            color = accentBlue,
+                            color = accentForest,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(bottom = 8.dp)
@@ -130,7 +130,7 @@ fun RewardsScreen(
                         .fillMaxWidth()
                         .border(
                             width = 1.dp,
-                            brush = Brush.horizontalGradient(listOf(accentPurple, Color.Transparent)),
+                            brush = Brush.horizontalGradient(listOf(accentSage, Color.Transparent)),
                             shape = RoundedCornerShape(16.dp)
                         )
                 ) {
@@ -141,10 +141,10 @@ fun RewardsScreen(
                         Surface(
                             modifier = Modifier.size(44.dp),
                             shape = RoundedCornerShape(12.dp),
-                            color = accentPurple.copy(alpha = 0.1f)
+                            color = accentSage.copy(alpha = 0.1f)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Text("⭐", color = accentPurple)
+                                Text("⭐", color = accentSage)
                             }
                         }
                         Spacer(Modifier.width(16.dp))
@@ -156,10 +156,10 @@ fun RewardsScreen(
                 }
             }
 
-            // Main Reward Card (10-Day Streak Example - Practical logic would count consecutive days in session collection)
+            // Main Reward Card
             item {
                 Surface(
-                    color = accentBlue.copy(alpha = 0.05f),
+                    color = accentForest.copy(alpha = 0.05f),
                     shape = RoundedCornerShape(32.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -176,7 +176,7 @@ fun RewardsScreen(
 
                         Column {
                             Surface(
-                                color = accentBlue,
+                                color = accentForest,
                                 shape = CircleShape
                             ) {
                                 Text(
@@ -206,10 +206,10 @@ fun RewardsScreen(
                                 Surface(
                                     modifier = Modifier.size(48.dp),
                                     shape = CircleShape,
-                                    color = accentBlue.copy(alpha = 0.2f)
+                                    color = accentForest.copy(alpha = 0.2f)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
-                                        Text("⚡", color = accentBlue, fontSize = 20.sp)
+                                        Text("⚡", color = accentForest, fontSize = 20.sp)
                                     }
                                 }
                                 Spacer(Modifier.width(16.dp))
@@ -220,7 +220,7 @@ fun RewardsScreen(
                 }
             }
 
-            // Centurion Milestone Card (Dynamic based on 100 hour goal)
+            // Centurion Milestone Card
             item {
                 val targetMinutes = 100 * 60 // 100 Hours
                 val progress = (totalMinutesFocused.toFloat() / targetMinutes).coerceIn(0f, 1f)
@@ -238,7 +238,7 @@ fun RewardsScreen(
                             CircularProgressIndicator(
                                 progress = { progress },
                                 modifier = Modifier.size(120.dp),
-                                color = accentPurple,
+                                color = accentSage,
                                 strokeWidth = 8.dp,
                                 trackColor = onSurface.copy(alpha = 0.05f)
                             )
@@ -256,7 +256,7 @@ fun RewardsScreen(
                         Text("Centurion", color = onSurface, fontWeight = FontWeight.Bold, fontSize = 20.sp)
                         Text("${totalMinutesFocused / 60} / 100 Hours Focused", color = greyText, fontSize = 14.sp)
                         Spacer(Modifier.height(8.dp))
-                        Text("${(progress * 100).toInt()}% towards goal", color = accentPurple, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text("${(progress * 100).toInt()}% towards goal", color = accentSage, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }

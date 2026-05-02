@@ -15,7 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.praneet.clarity.ui.LoginScreen
+import com.praneet.clarity.ui.screens.LoginScreen
 import com.praneet.clarity.ui.theme.SereneTheme
 import com.google.firebase.FirebaseApp
 import com.praneet.clarity.navigation.AppNavGraph

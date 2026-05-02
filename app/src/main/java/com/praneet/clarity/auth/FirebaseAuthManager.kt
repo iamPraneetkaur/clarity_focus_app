@@ -2,6 +2,7 @@ package com.praneet.clarity.auth
 
 import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.userProfileChangeRequest
 
 object FirebaseAuthManager {
 
@@ -49,6 +50,17 @@ object FirebaseAuthManager {
                     onError(task.exception?.message ?: "Login failed")
                 }
 
+            }
+    }
+
+    fun updateUserName(name: String, onComplete: (Boolean) -> Unit) {
+        val user = auth.currentUser
+        val profileUpdates = userProfileChangeRequest {
+            displayName = name
+        }
+        user?.updateProfile(profileUpdates)
+            ?.addOnCompleteListener { task ->
+                onComplete(task.isSuccessful)
             }
     }
 }

@@ -1,6 +1,7 @@
 package com.praneet.clarity.ui.screens
 
 import androidx.compose.animation.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -84,15 +85,40 @@ fun FocusTimerScreen(
 
         Spacer(modifier = Modifier.height(64.dp))
 
-        // Cancel Button
-        Button(
-            onClick = onCancel,
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surface),
-            shape = RoundedCornerShape(24.dp),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
-            modifier = Modifier.width(200.dp).height(56.dp)
+        // Actions: Pause/Resume and Cancel
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Cancel Session", color = onSurface.copy(alpha = 0.6f), fontWeight = FontWeight.SemiBold)
+            // Pause/Resume Button
+            Button(
+                onClick = {
+                    if (viewModel.isPaused) viewModel.resumeTimer() else viewModel.pauseTimer()
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier.weight(1f).height(56.dp)
+            ) {
+                Text(
+                    text = if (viewModel.isPaused) "Resume" else "Pause",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            // Cancel Button
+            OutlinedButton(
+                onClick = onCancel,
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier.weight(1f).height(56.dp),
+                border = BorderStroke(1.dp, onSurface.copy(alpha = 0.2f))
+            ) {
+                Text(
+                    "Cancel",
+                    color = onSurface.copy(alpha = 0.6f),
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
     }
 }

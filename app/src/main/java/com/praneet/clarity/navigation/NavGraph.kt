@@ -2,6 +2,7 @@ package com.praneet.clarity.navigation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -9,6 +10,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,8 +24,9 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
 import com.google.firebase.auth.FirebaseAuth
-import com.praneet.clarity.ui.LoginScreen
-import com.praneet.clarity.ui.OnboardingScreen
+import com.praneet.clarity.data.repository.FocusRepository
+import com.praneet.clarity.ui.screens.LoginScreen
+import com.praneet.clarity.ui.screens.OnboardingScreen
 import com.praneet.clarity.ui.screens.HomeScreen
 import com.praneet.clarity.ui.screens.StatsScreen
 import com.praneet.clarity.ui.screens.RewardsScreen
@@ -40,23 +43,32 @@ sealed class Screen(val route: String, val icon: ImageVector, val label: String)
 @Composable
 fun AppNavGraph() {
     val navController = rememberNavController()
-    val repository = com.praneet.clarity.data.repository.FocusRepository()
-    val factory = FocusViewModel.provideFactory(repository)
-    val viewModel: FocusViewModel = viewModel(factory = factory)
-
-    val startDestination = if (FirebaseAuth.getInstance().currentUser != null) "main_content" else "login"
+    val currentUser = FirebaseAuth.getInstance().currentUser
+    
+    val startDestination = when {
+        currentUser == null -> "login"
+        currentUser.displayName.isNullOrEmpty() -> "onboarding"
+        else -> "main_content"
+    }
 
     NavHost(navController = navController, startDestination = startDestination) {
         composable("login") {
-            LoginScreen(onLoginSuccess = {
-                navController.navigate("main_content") {
-                    popUpTo("login") { inclusive = true }
+            LoginScreen(
+                onLoginSuccess = {
+                    navController.navigate("main_content") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                },
+                onSignupSuccess = {
+                    navController.navigate("onboarding") {
+                        popUpTo("login") { inclusive = true }
+                    }
                 }
-            })
+            )
         }
         
         composable("onboarding") {
-            OnboardingScreen(onContinue = {
+            OnboardingScreen(onComplete = {
                 navController.navigate("main_content") {
                     popUpTo("onboarding") { inclusive = true }
                 }
@@ -64,6 +76,11 @@ fun AppNavGraph() {
         }
 
         composable("main_content") {
+            val context = LocalContext.current.applicationContext
+            val repository = FocusRepository()
+            val factory = FocusViewModel.provideFactory(repository, context)
+            val viewModel: FocusViewModel = viewModel(factory = factory)
+
             MainScaffold(viewModel, onLogout = {
                 navController.navigate("login") {
                     popUpTo("main_content") { inclusive = true }

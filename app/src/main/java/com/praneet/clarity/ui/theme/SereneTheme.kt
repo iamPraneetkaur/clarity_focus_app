@@ -17,23 +17,37 @@ val SereneInverted = Color(0xFF1C1C1C)
 private val SereneLightColorScheme = lightColorScheme(
     primary = SerenePrimary,
     onPrimary = Color.White,
+    primaryContainer = SereneSecondary.copy(alpha = 0.3f),
+    onPrimaryContainer = SerenePrimary,
     secondary = SereneSecondary,
     onSecondary = Color.White,
+    secondaryContainer = SereneSecondary.copy(alpha = 0.1f),
+    onSecondaryContainer = SerenePrimary,
     tertiary = SereneTertiary,
     onTertiary = SerenePrimary,
+    tertiaryContainer = SereneTertiary.copy(alpha = 0.5f),
+    onTertiaryContainer = SerenePrimary,
     background = SereneNeutral,
     surface = SereneNeutral,
     onBackground = SereneInverted,
     onSurface = SereneInverted,
     surfaceVariant = SereneTertiary,
-    onSurfaceVariant = SerenePrimary
+    onSurfaceVariant = SerenePrimary,
+    outline = SereneSecondary.copy(alpha = 0.5f),
+    inverseOnSurface = SereneNeutral,
+    inverseSurface = SereneInverted,
+    inversePrimary = SereneSecondary,
 )
 
 private val SereneDarkColorScheme = darkColorScheme(
     primary = SereneSecondary,
     onPrimary = SereneInverted,
+    primaryContainer = SerenePrimary,
+    onPrimaryContainer = SereneSecondary,
     secondary = SerenePrimary,
     onSecondary = Color.White,
+    secondaryContainer = SerenePrimary.copy(alpha = 0.3f),
+    onSecondaryContainer = SereneSecondary,
     tertiary = SerenePrimary,
     onTertiary = SereneTertiary,
     background = SereneInverted,
@@ -41,7 +55,8 @@ private val SereneDarkColorScheme = darkColorScheme(
     onBackground = SereneNeutral,
     onSurface = SereneNeutral,
     surfaceVariant = Color(0xFF2C2C2C),
-    onSurfaceVariant = SereneSecondary
+    onSurfaceVariant = SereneSecondary,
+    outline = SereneSecondary.copy(alpha = 0.3f),
 )
 
 @Composable

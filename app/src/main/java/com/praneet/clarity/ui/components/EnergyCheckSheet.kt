@@ -60,6 +60,6 @@ fun EnergyOption(level: EnergyLevel, onClick: () -> Unit) {
         ) {
             Text(level.emoji, fontSize = 24.sp)
         }
-        Text(level.name.lowercase().capitalize(), fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
+        Text(level.name.lowercase().replaceFirstChar{ it.uppercase()}, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
     }
 }
