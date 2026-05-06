@@ -27,12 +27,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuth
 
+import com.praneet.clarity.ui.theme.ThemeStyle
+import com.praneet.clarity.viewmodel.SettingsViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.platform.LocalContext
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    settingsViewModel: SettingsViewModel = viewModel(
+        factory = SettingsViewModel.provideFactory(LocalContext.current.applicationContext)
+    )
 ) {
+    val themeStyle by settingsViewModel.themeStyle
     val darkBg = MaterialTheme.colorScheme.background
     val cardBg = MaterialTheme.colorScheme.surfaceVariant
     val accentBlue = MaterialTheme.colorScheme.primary
@@ -162,9 +171,15 @@ fun SettingsScreen(
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Row(modifier = Modifier.padding(4.dp)) {
-                                ThemeButton("LIGHT", false, greyText)
-                                ThemeButton("DARK", true, accentBlue)
-                                ThemeButton("SYSTEM", false, greyText)
+                                ThemeButton("MINIMAL", themeStyle == ThemeStyle.MINIMAL, accentBlue) {
+                                    settingsViewModel.setThemeStyle(ThemeStyle.MINIMAL)
+                                }
+                                ThemeButton("SERENE", themeStyle == ThemeStyle.SERENE, accentBlue) {
+                                    settingsViewModel.setThemeStyle(ThemeStyle.SERENE)
+                                }
+                                ThemeButton("GAME", themeStyle == ThemeStyle.GAME, accentBlue) {
+                                    settingsViewModel.setThemeStyle(ThemeStyle.GAME)
+                                }
                             }
                         }
                     }
@@ -261,11 +276,11 @@ fun AboutRow(
 }
 
 @Composable
-fun ThemeButton(text: String, isSelected: Boolean, accentColor: Color) {
+fun ThemeButton(text: String, isSelected: Boolean, accentColor: Color, onClick: () -> Unit) {
     Surface(
         color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent,
         shape = RoundedCornerShape(8.dp),
-        onClick = {}
+        onClick = onClick
     ) {
         val greyText = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
         Text(

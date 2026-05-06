@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -25,6 +26,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuth
+import com.praneet.clarity.R
 import com.praneet.clarity.ui.components.CompletionCheerDialog
 import com.praneet.clarity.ui.components.EnergyCheckSheet
 import com.praneet.clarity.viewmodel.FocusViewModel
@@ -32,7 +34,7 @@ import com.praneet.clarity.utils.AlarmHelper
 import java.text.SimpleDateFormat
 import java.util.*
 
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(
     onLogout: () -> Unit,
@@ -43,6 +45,8 @@ fun HomeScreen(
     val context = LocalContext.current
     var showAddGoalDialog by remember { mutableStateOf(false) }
     var showCustomDurationDialog by remember { mutableStateOf(false) }
+    var goalToDelete by remember { mutableStateOf<Pair<String, String>?>(null) }
+    var isGoalDropdownExpanded by remember { mutableStateOf(false) }
 
     val currentUser = FirebaseAuth.getInstance().currentUser
     val userName = currentUser?.displayName?.split(" ")?.firstOrNull() ?: "Alex"
@@ -54,9 +58,6 @@ fun HomeScreen(
         in 12..16 -> "Good Afternoon"
         else -> "Good Evening"
     }
-    
-    val dateFormat = SimpleDateFormat("EEEE, MMM d", Locale.getDefault())
-    val dateString = dateFormat.format(Date()).uppercase()
 
     // THE SWITCH: Toggles between Dashboard and Immersive Timer
     AnimatedContent(
@@ -85,32 +86,27 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Profile Image Placeholder
-                        Surface(
-                            modifier = Modifier.size(48.dp),
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.surfaceVariant
-                        ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
-                                Icons.Default.Person, 
-                                contentDescription = "Profile",
-                                modifier = Modifier.padding(8.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                imageVector = Icons.Default.Spa, // Using Spa icon as a leaf-like logo
+                                contentDescription = "Logo",
+                                tint = Color(0xFF5E7153), // Serene green
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                "Clarity", 
+                                color = MaterialTheme.colorScheme.onBackground, 
+                                fontWeight = FontWeight.ExtraBold, 
+                                fontSize = 20.sp
                             )
                         }
-                        
-                        Text(
-                            "Clarity", 
-                            color = MaterialTheme.colorScheme.primary, 
-                            fontWeight = FontWeight.Bold, 
-                            fontSize = 20.sp
-                        )
                         
                         IconButton(onClick = onNavigateToSettings) {
                             Icon(
                                 Icons.Outlined.Settings, 
                                 contentDescription = "Settings", 
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                             )
                         }
                     }
@@ -123,31 +119,159 @@ fun HomeScreen(
                         .padding(horizontal = 24.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     
-                    // Greeting
-                    Text(
-                        text = "$greeting, $userName",
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = dateString,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                        letterSpacing = 1.sp
-                    )
+                    // Greeting Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "$greeting, $userName",
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                            Text(
+                                text = "Let's make today productive",
+                                fontSize = 16.sp,
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                            )
+                        }
+                        
+                        // Profile Image
+                        Surface(
+                            modifier = Modifier.size(56.dp),
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surfaceVariant
+                        ) {
+                            Icon(
+                                Icons.Default.Person, 
+                                contentDescription = "Profile",
+                                modifier = Modifier.padding(12.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
+                    // --- 1. FOCUS TIME CARD ---
+                    FocusTimeCard()
 
                     Spacer(modifier = Modifier.height(32.dp))
-                    
-                    // --- 1. TIME AWARENESS CARD ---
-                    TimeAwarenessCard(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary)
 
-                    Spacer(modifier = Modifier.height(40.dp))
+                    // --- 2. START FOCUS SESSION SECTION ---
+                    Text(
+                        "Start Focus Session", 
+                        color = MaterialTheme.colorScheme.onBackground, 
+                        fontWeight = FontWeight.Bold, 
+                        fontSize = 20.sp
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                    // --- 2. GOALS SECTION ---
+                    Surface(
+                        color = MaterialTheme.colorScheme.surface,
+                        shape = RoundedCornerShape(24.dp),
+                        shadowElevation = 2.dp,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(20.dp)) {
+                            // Duration selection
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                val presets = listOf(25, 45, 60)
+                                val currentDur = focusViewModel.initialSelectedMinutes
+                                
+                                presets.forEach { mins ->
+                                    DurationChip(
+                                        mins = mins,
+                                        isSelected = currentDur == mins,
+                                        onClick = { focusViewModel.updateSelectedDuration(mins) }
+                                    )
+                                }
+                                
+                                DurationChip(
+                                    label = "Custom",
+                                    isSelected = currentDur !in presets,
+                                    onClick = { showCustomDurationDialog = true }
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(20.dp))
+
+                            // Session Goal Dropdown
+                            ExposedDropdownMenuBox(
+                                expanded = isGoalDropdownExpanded,
+                                onExpandedChange = { isGoalDropdownExpanded = it }
+                            ) {
+                                OutlinedTextField(
+                                    value = focusViewModel.selectedGoalTitle ?: "Select a Goal",
+                                    onValueChange = {},
+                                    readOnly = true,
+                                    label = { Text("Session Goal") },
+                                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isGoalDropdownExpanded) },
+                                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+
+                                ExposedDropdownMenu(
+                                    expanded = isGoalDropdownExpanded,
+                                    onDismissRequest = { isGoalDropdownExpanded = false }
+                                ) {
+                                    focusViewModel.goals.forEach { goalMap ->
+                                        val id = goalMap["id"] as? String ?: return@forEach
+                                        val title = goalMap["title"] as? String ?: "Unnamed"
+                                        DropdownMenuItem(
+                                            text = { Text(title) },
+                                            onClick = {
+                                                focusViewModel.selectGoal(id, title)
+                                                isGoalDropdownExpanded = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(20.dp))
+
+                            // Start Button
+                            Button(
+                                onClick = {
+                                    if (focusViewModel.selectedGoalId != null) {
+                                        focusViewModel.startTimer(focusViewModel.initialSelectedMinutes)
+                                        AlarmHelper.scheduleAlarm(context, focusViewModel.initialSelectedMinutes, focusViewModel.selectedGoalId)
+                                    }
+                                },
+                                enabled = focusViewModel.selectedGoalId != null,
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF3E4E35), // Dark green from image
+                                    contentColor = Color.White
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.PlayArrow, contentDescription = null)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Start Focus", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    // --- 3. YOUR GOALS SECTION ---
                     Row(
                         modifier = Modifier.fillMaxWidth(), 
                         horizontalArrangement = Arrangement.SpaceBetween, 
@@ -155,146 +279,56 @@ fun HomeScreen(
                     ) {
                         Text(
                             "Your Goals", 
-                            color = MaterialTheme.colorScheme.primary, 
+                            color = MaterialTheme.colorScheme.onBackground, 
                             fontWeight = FontWeight.Bold, 
-                            fontSize = 22.sp
+                            fontSize = 20.sp
                         )
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.secondaryContainer)
-                                .clickable { showAddGoalDialog = true },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = "Add Goal", tint = MaterialTheme.colorScheme.primary)
+                        TextButton(onClick = { showAddGoalDialog = true }) {
+                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Add Goal")
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         focusViewModel.goals.forEach { goalMap ->
                             val id = goalMap["id"] as? String ?: return@forEach
                             val title = goalMap["title"] as? String ?: "Unnamed"
-                            val isSelected = focusViewModel.selectedGoalId == id
+                            val current = (goalMap["currentMinutes"] as? Long ?: 0L).toInt()
+                            val target = goalMap["targetMinutes"] as? Int ?: 60
 
-                            GoalChip(
+                            GoalCard(
                                 title = title,
-                                isSelected = isSelected,
-                                onClick = { focusViewModel.selectGoal(id, title) }
+                                current = current,
+                                target = target,
+                                onLongClick = { goalToDelete = id to title }
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    // --- 3. DURATION SECTION ---
-                    Text(
-                        "DURATION", 
-                        fontSize = 12.sp, 
-                        fontWeight = FontWeight.Bold, 
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                        letterSpacing = 1.sp
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(40.dp))
                     
-                    Row(
+                    // --- 4. QUOTE ---
+                    Text(
+                        text = "\"Small steps today lead to big success\ntomorrow\"",
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        val presets = listOf(25, 45, 60)
-                        val currentDur = focusViewModel.initialSelectedMinutes
-                        
-                        // Show presets
-                        presets.forEach { mins ->
-                            DurationCircle(
-                                mins = mins,
-                                isSelected = currentDur == mins,
-                                onClick = { focusViewModel.updateSelectedDuration(mins) }
-                            )
-                        }
-                        
-                        // Show custom if set and not a preset
-                        if (currentDur !in presets) {
-                            DurationCircle(
-                                mins = currentDur,
-                                isSelected = true,
-                                onClick = { }
-                            )
-                        }
-                        
-                        // Edit Icon Circle
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f))
-                                .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), CircleShape)
-                                .clickable { showCustomDurationDialog = true },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                Icons.Default.Edit, 
-                                contentDescription = "Custom Duration", 
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                        fontSize = 16.sp,
+                        lineHeight = 22.sp
+                    )
 
-                    Spacer(modifier = Modifier.height(48.dp))
+                    Spacer(modifier = Modifier.height(40.dp))
 
-                    // --- 4. START BUTTON ---
-                    Button(
-                        onClick = {
-                            if (focusViewModel.selectedGoalId != null) {
-                                focusViewModel.startTimer(focusViewModel.initialSelectedMinutes)
-                                AlarmHelper.scheduleAlarm(context, focusViewModel.initialSelectedMinutes, focusViewModel.selectedGoalId)
-                            }
-                        },
-                        enabled = focusViewModel.selectedGoalId != null,
-                        shape = RoundedCornerShape(40.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(72.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.PlayArrow, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                "Start Focus Session", 
-                                fontWeight = FontWeight.Bold, 
-                                fontSize = 18.sp,
-                                color = MaterialTheme.colorScheme.onPrimary
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(48.dp))
-
-                    // --- 5. DAILY STATS (Bottom) ---
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        StatItem(Icons.Default.Schedule, "Focus:", "2h 15m", MaterialTheme.colorScheme.primary)
-                        HorizontalDivider(modifier = Modifier.height(24.dp).width(1.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
-                        StatItem(Icons.Default.CheckCircle, "Completed:", "3", MaterialTheme.colorScheme.primary)
-                    }
-
-                    Spacer(modifier = Modifier.height(32.dp))
-
+                    // Dialogs
                     if (showAddGoalDialog) {
                         LocalAddGoalDialog(
                             onDismiss = { showAddGoalDialog = false },
@@ -328,6 +362,30 @@ fun HomeScreen(
                             }
                         )
                     }
+
+                    goalToDelete?.let { (id, title) ->
+                        AlertDialog(
+                            onDismissRequest = { goalToDelete = null },
+                            title = { Text("Remove Goal") },
+                            text = { Text("Are you sure you want to remove '$title'?") },
+                            confirmButton = {
+                                Button(
+                                    onClick = {
+                                        focusViewModel.deleteGoal(id)
+                                        goalToDelete = null
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                                ) {
+                                    Text("Remove", color = MaterialTheme.colorScheme.onError)
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { goalToDelete = null }) {
+                                    Text("Cancel")
+                                }
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -335,143 +393,168 @@ fun HomeScreen(
 }
 
 @Composable
-fun TimeAwarenessCard(darkGreen: Color, lightGreen: Color) {
-    val calendar = Calendar.getInstance()
-    val hour = calendar.get(Calendar.HOUR_OF_DAY)
-    val remainingHours = 24 - hour
-    val progress = (hour.toFloat() / 24f)
+fun FocusTimeCard() {
+    val cardGradient = Brush.linearGradient(
+        colors = listOf(
+            Color(0xFFB8C69F), // Lighter green
+            Color(0xFFA3B18A)  // Darker green
+        )
+    )
 
     Surface(
-        color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(48.dp),
         modifier = Modifier.fillMaxWidth(),
-        shadowElevation = 2.dp
+        shape = RoundedCornerShape(28.dp),
+        color = Color.Transparent // Background is handled by Box gradient
     ) {
-        Row(
-            modifier = Modifier.padding(32.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+        Box(
+            modifier = Modifier
+                .background(cardGradient)
+                .fillMaxWidth()
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "$remainingHours hours",
-                    fontSize = 48.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = darkGreen,
-                    lineHeight = 48.sp
-                )
-                Text(
-                    text = "remain in your\nday",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = darkGreen.copy(alpha = 0.7f),
-                    lineHeight = 28.sp
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = "Make the most of\nyour time today",
-                    fontSize = 14.sp,
-                    color = Color.Gray,
-                    lineHeight = 18.sp
-                )
-            }
-            
-            Box(contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(
-                    progress = { progress },
-                    modifier = Modifier.size(100.dp),
-                    color = darkGreen,
-                    trackColor = lightGreen.copy(alpha = 0.3f),
-                    strokeWidth = 12.dp,
-                    strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
-                )
-                Text(
-                    "${(progress * 100).toInt()}%",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = darkGreen
-                )
+            // Background Pattern/Icon
+            Icon(
+                imageVector = Icons.Default.Bolt,
+                contentDescription = null,
+                tint = Color.White.copy(alpha = 0.1f),
+                modifier = Modifier
+                    .size(120.dp)
+                    .align(Alignment.BottomEnd)
+                    .offset(x = 20.dp, y = 20.dp)
+            )
+
+            Row(
+                modifier = Modifier.padding(28.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "85% Focus\ntime left\ntoday",
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color(0xFF2C3627), // Dark olive text
+                        lineHeight = 30.sp
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "STEADY PROGRESS",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2C3627).copy(alpha = 0.6f),
+                        letterSpacing = 1.2.sp
+                    )
+                }
+                
+                Box(contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(
+                        progress = { 0.85f },
+                        modifier = Modifier.size(84.dp),
+                        color = Color(0xFF2C3627),
+                        trackColor = Color(0xFF2C3627).copy(alpha = 0.1f),
+                        strokeWidth = 10.dp,
+                        strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+                    )
+                    Text(
+                        "85",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2C3627)
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-fun GoalChip(title: String, isSelected: Boolean, onClick: () -> Unit) {
-    val icon = when (title.uppercase()) {
-        "STUDY" -> Icons.Default.Book
-        "WORKOUT" -> Icons.Default.FitnessCenter
-        "CODING" -> Icons.Default.Code
-        else -> Icons.Default.Flag
-    }
-    
-    val backgroundColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-    val contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
-    
+fun DurationChip(mins: Int? = null, label: String? = null, isSelected: Boolean, onClick: () -> Unit) {
+    val text = label ?: "${mins}m"
     Surface(
         onClick = onClick,
-        color = backgroundColor,
-        shape = CircleShape,
-        border = if (!isSelected) BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)) else null,
-        modifier = Modifier.height(48.dp)
+        color = if (isSelected) Color(0xFFDAE2D3) else Color.Transparent,
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.5f)),
+        modifier = Modifier.height(40.dp).defaultMinSize(minWidth = 72.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 24.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                icon, 
-                contentDescription = null, 
-                tint = contentColor,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 16.dp)) {
             Text(
-                title.uppercase(),
-                color = contentColor,
-                fontWeight = FontWeight.Bold,
+                text = text,
+                color = if (isSelected) Color(0xFF3E4E35) else Color.Gray,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                 fontSize = 14.sp
             )
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun DurationCircle(mins: Int, isSelected: Boolean, onClick: () -> Unit) {
-    Box(
+fun GoalCard(title: String, current: Int, target: Int, onLongClick: () -> Unit) {
+    val progress = if (target > 0) current.toFloat() / target.toFloat() else 0f
+    
+    // Determine icon and color based on title (mocking the image)
+    val (icon, color) = when {
+        title.contains("Read", ignoreCase = true) -> Icons.Default.Book to Color(0xFFFFD1DC)
+        title.contains("Hydration", ignoreCase = true) -> Icons.Default.WaterDrop to Color(0xFFD1F2D1)
+        else -> Icons.Default.Flag to Color(0xFFE0E0E0)
+    }
+
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(20.dp),
+        shadowElevation = 1.dp,
         modifier = Modifier
-            .height(48.dp)
-            .defaultMinSize(minWidth = 72.dp)
-            .clip(CircleShape)
-            .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f))
-            .border(
-                width = if (isSelected) 0.dp else 1.dp,
-                color = if (isSelected) Color.Transparent else MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                shape = CircleShape
+            .width(160.dp)
+            .combinedClickable(
+                onClick = {},
+                onLongClick = onLongClick
             )
-            .clickable { onClick() }
-            .padding(horizontal = 16.dp),
-        contentAlignment = Alignment.Center
     ) {
-        Text(
-            "$mins min",
-            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-            fontSize = 14.sp
-        )
+        Column(modifier = Modifier.padding(16.dp)) {
+            Surface(
+                color = color,
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    icon, 
+                    contentDescription = null, 
+                    tint = Color.Black.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Text(
+                title,
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1
+            )
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier.fillMaxWidth().height(6.dp).clip(CircleShape),
+                color = Color(0xFF4A3434), // Dark brownish color from progress bar in image
+                trackColor = Color.LightGray.copy(alpha = 0.3f),
+                strokeCap = androidx.compose.ui.graphics.StrokeCap.Round
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Text(
+                "$current/$target ${if (title.contains("Read")) "pages" else "mins"}",
+                fontSize = 11.sp,
+                color = Color.Gray
+            )
+        }
     }
 }
 
-@Composable
-fun StatItem(icon: ImageVector, label: String, value: String, darkGreen: Color) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, contentDescription = null, tint = darkGreen.copy(alpha = 0.6f), modifier = Modifier.size(18.dp))
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(label, color = Color.Gray, fontSize = 14.sp)
-        Spacer(modifier = Modifier.width(4.dp))
-        Text(value, color = darkGreen, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-    }
-}
 
 @Composable
 fun CustomDurationDialog(onDismiss: () -> Unit, onConfirm: (Int) -> Unit) {

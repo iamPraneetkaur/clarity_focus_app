@@ -32,6 +32,7 @@ import com.praneet.clarity.ui.screens.StatsScreen
 import com.praneet.clarity.ui.screens.RewardsScreen
 import com.praneet.clarity.ui.screens.SettingsScreen
 import com.praneet.clarity.viewmodel.FocusViewModel
+import com.praneet.clarity.viewmodel.SettingsViewModel
 
 sealed class Screen(val route: String, val icon: ImageVector, val label: String) {
     object Focus : Screen("home", Icons.Default.Timer, "Focus")
@@ -41,7 +42,7 @@ sealed class Screen(val route: String, val icon: ImageVector, val label: String)
 }
 
 @Composable
-fun AppNavGraph() {
+fun AppNavGraph(settingsViewModel: SettingsViewModel) {
     val navController = rememberNavController()
     val currentUser = FirebaseAuth.getInstance().currentUser
     
@@ -81,17 +82,25 @@ fun AppNavGraph() {
             val factory = FocusViewModel.provideFactory(repository, context)
             val viewModel: FocusViewModel = viewModel(factory = factory)
 
-            MainScaffold(viewModel, onLogout = {
-                navController.navigate("login") {
-                    popUpTo("main_content") { inclusive = true }
+            MainScaffold(
+                viewModel = viewModel,
+                settingsViewModel = settingsViewModel,
+                onLogout = {
+                    navController.navigate("login") {
+                        popUpTo("main_content") { inclusive = true }
+                    }
                 }
-            })
+            )
         }
     }
 }
 
 @Composable
-fun MainScaffold(viewModel: FocusViewModel, onLogout: () -> Unit) {
+fun MainScaffold(
+    viewModel: FocusViewModel,
+    settingsViewModel: SettingsViewModel,
+    onLogout: () -> Unit
+) {
     val navController = rememberNavController()
     val items = listOf(Screen.Focus, Screen.Stats, Screen.Rewards, Screen.Settings)
 
@@ -193,7 +202,8 @@ fun MainScaffold(viewModel: FocusViewModel, onLogout: () -> Unit) {
             composable(Screen.Settings.route) {
                 SettingsScreen(
                     onBack = { navController.popBackStack() },
-                    onLogout = onLogout
+                    onLogout = onLogout,
+                    settingsViewModel = settingsViewModel
                 )
             }
         }

@@ -28,6 +28,11 @@ class FocusRepository {
         goalsCollection.add(goal).await()
     }
 
+    suspend fun deleteGoal(goalId: String) {
+        if (userId.isEmpty()) return
+        goalsCollection.document(goalId).delete().await()
+    }
+
     fun getGoals() = if (userId.isEmpty()) {
         com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("empty").snapshots()
     } else {

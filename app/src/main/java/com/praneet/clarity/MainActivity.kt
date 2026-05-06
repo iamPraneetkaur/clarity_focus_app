@@ -7,26 +7,26 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.praneet.clarity.ui.screens.LoginScreen
-import com.praneet.clarity.ui.theme.SereneTheme
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.firebase.FirebaseApp
 import com.praneet.clarity.navigation.AppNavGraph
+import com.praneet.clarity.ui.theme.ClarityTheme
+import com.praneet.clarity.viewmodel.SettingsViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         FirebaseApp.initializeApp(this)
+        enableEdgeToEdge()
         setContent {
-            SereneTheme {
-                // 👇 ADD THE PERMISSION LOGIC HERE
+            val settingsViewModel: SettingsViewModel = viewModel(
+                factory = SettingsViewModel.provideFactory(applicationContext)
+            )
+            val themeStyle by settingsViewModel.themeStyle
+
+            ClarityTheme(themeStyle = themeStyle) {
                 val permissionLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.RequestPermission()
                 ) { isGranted ->
@@ -40,7 +40,7 @@ class MainActivity : ComponentActivity() {
                         permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
                     }
                 }
-                AppNavGraph()
+                AppNavGraph(settingsViewModel = settingsViewModel)
             }
         }
     }

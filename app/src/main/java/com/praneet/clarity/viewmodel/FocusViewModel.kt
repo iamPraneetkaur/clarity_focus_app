@@ -151,6 +151,16 @@ class FocusViewModel(
         }
     }
 
+    fun deleteGoal(id: String) {
+        viewModelScope.launch {
+            repository.deleteGoal(id)
+            if (selectedGoalId == id) {
+                selectedGoalId = null
+                selectedGoalTitle = null
+            }
+        }
+    }
+
     fun startTimer(durationMinutes: Int) {
         initialSelectedMinutes = durationMinutes
         timerJob?.cancel()
