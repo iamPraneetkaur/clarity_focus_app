@@ -15,11 +15,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
@@ -29,16 +32,18 @@ import com.praneet.clarity.ui.screens.LoginScreen
 import com.praneet.clarity.ui.screens.OnboardingScreen
 import com.praneet.clarity.ui.screens.HomeScreen
 import com.praneet.clarity.ui.screens.StatsScreen
+import com.praneet.clarity.ui.screens.GoalsScreen
 import com.praneet.clarity.ui.screens.RewardsScreen
 import com.praneet.clarity.ui.screens.SettingsScreen
 import com.praneet.clarity.viewmodel.FocusViewModel
 import com.praneet.clarity.viewmodel.SettingsViewModel
 
 sealed class Screen(val route: String, val icon: ImageVector, val label: String) {
-    object Focus : Screen("home", Icons.Default.Timer, "Focus")
-    object Stats : Screen("stats", Icons.Default.BarChart, "Stats")
+    object Focus : Screen("home", Icons.Default.Timer, "Home")
+    object Goals : Screen("goals", Icons.Default.Timeline, "Goals")
+    object Stats : Screen("stats", Icons.Default.BarChart, "Sessions")
     object Rewards : Screen("rewards", Icons.Default.EmojiEvents, "Rewards")
-    object Settings : Screen("settings", Icons.Default.Person, "Settings")
+    object Settings : Screen("settings", Icons.Default.Person, "Profile")
 }
 
 @Composable
@@ -95,6 +100,7 @@ fun AppNavGraph(settingsViewModel: SettingsViewModel) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScaffold(
     viewModel: FocusViewModel,
@@ -102,17 +108,79 @@ fun MainScaffold(
     onLogout: () -> Unit
 ) {
     val navController = rememberNavController()
-    val items = listOf(Screen.Focus, Screen.Stats, Screen.Rewards, Screen.Settings)
+    // Removed Screen.Settings from bottom bar items as per user request
+    val items = listOf(Screen.Focus, Screen.Goals, Screen.Stats, Screen.Rewards)
 
-    // Hide bottom bar if timer is running for immersion
-    val showBottomBar = !viewModel.isTimerRunning
+    // Hide top and bottom bars if timer is running for immersion
+    val showBars = !viewModel.isTimerRunning
     val primaryColor = MaterialTheme.colorScheme.primary
     val onSurface = MaterialTheme.colorScheme.onSurface
     val surfaceColor = MaterialTheme.colorScheme.surface
 
     Scaffold(
+        topBar = {
+            if (showBars) {
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentRoute = navBackStackEntry?.destination?.route
+                
+                if (currentRoute == Screen.Settings.route) {
+                    TopAppBar(
+                        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+                        navigationIcon = {
+                            IconButton(onClick = { navController.popBackStack() }) {
+                                Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = primaryColor)
+                            }
+                        },
+                        title = {
+                            Text("Settings", color = onSurface, fontWeight = FontWeight.Bold)
+                        },
+                        actions = {
+                            Text(
+                                "CLARITY",
+                                modifier = Modifier.padding(end = 16.dp),
+                                color = onSurface.copy(alpha = 0.6f),
+                                fontWeight = FontWeight.Black,
+                                fontSize = 18.sp
+                            )
+                        }
+                    )
+                } else {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Spa,
+                                contentDescription = "Logo",
+                                tint = Color(0xFF5E7153),
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                "Clarity",
+                                color = onSurface,
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 20.sp
+                            )
+                        }
+
+                        IconButton(onClick = { navController.navigate(Screen.Settings.route) }) {
+                            Icon(
+                                Icons.Outlined.Settings,
+                                contentDescription = "Settings",
+                                tint = onSurface.copy(alpha = 0.6f)
+                            )
+                        }
+                    }
+                }
+            }
+        },
         bottomBar = {
-            if (showBottomBar) {
+            if (showBars) {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
@@ -189,6 +257,12 @@ fun MainScaffold(
             }
             composable(Screen.Stats.route) {
                 StatsScreen(
+                    viewModel = viewModel,
+                    onNavigateToSettings = { navController.navigate(Screen.Settings.route) }
+                )
+            }
+            composable(Screen.Goals.route) {
+                GoalsScreen(
                     viewModel = viewModel,
                     onNavigateToSettings = { navController.navigate(Screen.Settings.route) }
                 )

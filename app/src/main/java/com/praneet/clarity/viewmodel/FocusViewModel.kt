@@ -221,6 +221,20 @@ class FocusViewModel(
 
     fun completeSession(energyLevel: String) {
         showEnergySheet = false
+        val goalId = selectedGoalId ?: return
+        val duration = initialSelectedMinutes.toLong()
+        
+        viewModelScope.launch {
+            repository.updateGoalProgress(goalId, duration)
+            repository.saveSession(
+                com.praneet.clarity.data.model.FocusSession(
+                    goalId = goalId,
+                    durationMinutes = duration,
+                    energyLevel = com.praneet.clarity.data.model.EnergyLevel.valueOf(energyLevel),
+                    timestamp = System.currentTimeMillis()
+                )
+            )
+        }
     }
 
     companion object {

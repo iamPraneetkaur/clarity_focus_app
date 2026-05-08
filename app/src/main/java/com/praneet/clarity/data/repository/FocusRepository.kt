@@ -33,6 +33,13 @@ class FocusRepository {
         goalsCollection.document(goalId).delete().await()
     }
 
+    suspend fun updateGoalProgress(goalId: String, additionalMinutes: Long) {
+        if (userId.isEmpty()) return
+        val doc = goalsCollection.document(goalId).get().await()
+        val current = doc.getLong("currentMinutes") ?: 0L
+        goalsCollection.document(goalId).update("currentMinutes", current + additionalMinutes).await()
+    }
+
     fun getGoals() = if (userId.isEmpty()) {
         com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("empty").snapshots()
     } else {
